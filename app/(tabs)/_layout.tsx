@@ -1,45 +1,88 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
+import { useApp } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
+import { darkTheme, lightTheme } from '../../theme/colors';
 
-import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
-
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+export default function TabsLayout() {
+  const { isDarkMode, toggleDarkMode } = useApp();
+  const { user, logout } = useAuth();
+  const theme = isDarkMode ? darkTheme : lightTheme;
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            // Use a transparent background on iOS to show the blur effect
-            position: 'absolute',
-          },
-          default: {},
-        }),
-      }}>
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.textSecondary,
+        headerShown: true,
+        tabBarStyle: {
+          borderTopWidth: 1,
+          borderTopColor: theme.border,
+          backgroundColor: theme.tabBar,
+          paddingTop: 5,
+          paddingBottom: 5,
+        },
+        headerStyle: {
+          backgroundColor: theme.header,
+        },
+        headerTitleStyle: {
+          color: theme.text,
+          fontWeight: '600',
+        },
+        headerRight: () => (
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16 }}>
+            <TouchableOpacity
+              onPress={toggleDarkMode}
+              style={{ marginRight: 16 }}
+            >
+              <MaterialCommunityIcons
+                name={isDarkMode ? 'white-balance-sunny' : 'moon-waning-crescent'}
+                size={24}
+                color={theme.text}
+              />
+            </TouchableOpacity>
+            {user && (
+              <TouchableOpacity onPress={logout}>
+                <MaterialCommunityIcons
+                  name="logout"
+                  size={24}
+                  color={theme.text}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+        ),
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: 'Recetas',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="food" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="favorites"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Favoritos',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="heart" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="ingredients"
+        options={{
+          title: 'Ingredientes',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="format-list-bulleted" size={size} color={color} />
+          ),
         }}
       />
     </Tabs>
   );
-}
+} 

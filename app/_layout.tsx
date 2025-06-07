@@ -1,29 +1,62 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import { Stack, router, useSegments } from 'expo-router';
+import { useEffect } from 'react';
+import { AppProvider, useApp } from '../context/AppContext';
+import { AuthProvider, useAuth } from '../context/AuthContext';
+import { darkTheme, lightTheme } from '../theme/colors';
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+function RootLayoutNav() {
+  const { user, isLoading } = useAuth();
+  const { isDarkMode } = useApp();
+  const segments = useSegments();
+  const theme = isDarkMode ? darkTheme : lightTheme;
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
+  useEffect(() => {
+    if (isLoading) return;
 
-  if (!loaded) {
-    // Async font loading only occurs in development.
-    return null;
-  }
+    const inAuthGroup = segments[0] === 'auth';
+    const inProtectedRoute = segments[0] === 'favorites' || segments[0] === 'ingredients';
+
+    if (!user && inProtectedRoute) {
+      router.replace('/auth/login');
+    } else if (user && inAuthGroup) {
+      router.replace('/(tabs)');
+    }
+  }, [user, segments, isLoading]);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <Stack
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: theme.header,
+        },
+        headerTintColor: theme.text,
+        headerTitleStyle: {
+          fontWeight: '600',
+          color: theme.text,
+        },
+        contentStyle: {
+          backgroundColor: theme.background,
+        },
+      }}
+    >
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen 
+        name="recipe/[id]" 
+        options={{ 
+          title: 'Detalle de Receta',
+          headerShown: true,
+        }} 
+      />
+    </Stack>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <AuthProvider>
+      <AppProvider>
+        <RootLayoutNav />
+      </AppProvider>
+    </AuthProvider>
   );
 }
